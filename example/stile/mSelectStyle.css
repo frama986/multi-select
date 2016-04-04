@@ -13,10 +13,47 @@
     display: inline-block;
     border: 1px #A9A9A9 solid;
     color: #333;
+    overflow: hidden;
+    margin: 0px;
+    padding: 0px;
+    background-color: white;
+}
+
+.msText {
+    position: relative;
+    display: inline-block;
+    border: none;
+    color: #333;
+    width: auto;
+    height: 100%;
     overflow-y: auto;
     overflow-x: hidden;
     margin: 0px;
-    padding: 2px;
+    padding: 1px 0px 1px 17px;
+    background-color: white;
+}
+
+.msArrow {
+    position: absolute;
+    left: 1px;
+    top: 0px;
+    bottom: 0px;
+    margin: auto 2px;
+    padding: 0px;
+    width: 11px;
+    height: 6px;
+    vertical-align: middle;
+    border: none;
+    outline: none;
+    background-image: url('../img/arrow_11x13.png');
+}
+
+.msArrowDown {
+    background-position: 0px 6px;
+}
+
+.msArrowUp {
+    background-position: 0px 0px;
 }
 
 .msOptionsContainer {
@@ -28,6 +65,7 @@
     top: 0px;
     left: 0px;
     border: 1px #A9A9A9 solid;
+    background-color: white;
     overflow-y: auto;
     overflow-x: hidden;
     z-index: 1000;

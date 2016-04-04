@@ -52,15 +52,27 @@ function multiSelectTrasnform(_params) {
         msContainer.className = 'msContainer';
         msContainer.style.width = msWidth + 'px';
         msContainer.style.height = (msHeight * params.hRatio)+ 'px';
-        cloneFont(el, msContainer);
-        msContainer.innerText = 'Selezionare un\'opzione';
+        //cloneFont(el, msContainer);
+        //msContainer.innerText = 'Selezionare un\'opzione';
         
+        // Text of selected elements
+        var msText = document.createElement('div');
+        msText.className = 'msText';
+        cloneFont(el, msText);
+        msText.innerText = 'Selezionare un\'opzione';
+        
+        // Arrow image
+        var msArrow = document.createElement('div');
+        msArrow.className = 'msArrow msArrowDown';
+        
+        msContainer.appendChild(msText);
+        msContainer.appendChild(msArrow);
         mainContainer.appendChild(msContainer);
         
         // Options container
         var optionsContainer = document.createElement('div');
         optionsContainer.className = 'msOptionsContainer hidden';
-        optionsContainer.style.width = (msWidth + 4) + 'px';
+        optionsContainer.style.width = msWidth + 'px';
         cloneFont(el, optionsContainer);
         for(var j = 0; j < options.length; ++j) {
             // Option element
@@ -94,7 +106,7 @@ function multiSelectTrasnform(_params) {
         
         bindFunction(msContainer, 'click', msToggle);
         
-        setSelected(msContainer, optionsContainer, params.print);
+        setSelected(msText, optionsContainer, params.print);
         
         returns.push(mainContainer);
     }
@@ -108,26 +120,16 @@ function multiSelectTrasnform(_params) {
  */
 function msToggle(event) {
     var msContainer = this;
+    var msArrow = msContainer.querySelector('div.msArrow');
     var parent = msContainer.parentElement;
     var optionsContainer = parent.querySelector('div.msOptionsContainer');
     
     if(hasClass(optionsContainer, 'hidden')) {
         closeAllMs();
-        removeClass(optionsContainer, 'hidden');
-        
-        if(hasSpace(msContainer, optionsContainer)) {
-            optionsContainer.style.top = 
-                (msContainer.offsetTop + msContainer.offsetHeight) + 'px';
-            optionsContainer.style.left = msContainer.offsetLeft + 'px';
-        }
-        else {
-            optionsContainer.style.top = 
-                (msContainer.offsetTop - optionsContainer.offsetHeight) + 'px';
-            optionsContainer.style.left = msContainer.offsetLeft + 'px';
-        }
+        openOptionsContainer(msContainer, optionsContainer);
     }
     else {
-        optionsContainer.className += ' hidden';
+        closeOptionsContainer(optionsContainer);
     }
 }
 
@@ -140,8 +142,57 @@ function closeAllMs() {
         return;
     for(var i = 0; i < ms.length; ++i) {
         if(!hasClass(ms[i], 'hidden'))
-            ms[i].className += ' hidden';
+            closeOptionsContainer(ms[i]);
     }
+}
+
+/**
+ * Open options container
+ */
+function openOptionsContainer(msContainer, optionsContainer) {
+    var msArrow = msContainer.querySelector('div.msArrow');
+    
+    removeClass(optionsContainer, 'hidden');
+        
+    if(hasSpace(msContainer, optionsContainer)) {
+        optionsContainer.style.top = 
+            (msContainer.offsetTop + msContainer.offsetHeight) + 'px';
+        optionsContainer.style.left = msContainer.offsetLeft + 'px';
+    }
+    else {
+        optionsContainer.style.top = 
+            (msContainer.offsetTop - optionsContainer.offsetHeight) + 'px';
+        optionsContainer.style.left = msContainer.offsetLeft + 'px';
+    }
+
+    setArrowUp(msArrow);
+}
+
+/**
+ * Close options container
+ */
+function closeOptionsContainer(optionsContainer) {
+    var parent = optionsContainer.parentElement;
+    var msArrow = parent.querySelector('div.msArrow');
+    
+    addClass(optionsContainer,'hidden');
+    setArrowDown(msArrow);
+}
+
+/**
+ * Set arrow up
+ */
+function setArrowUp(msArrow) {
+    removeClass(msArrow, 'msArrowDown');
+    addClass(msArrow, 'msArrowUp');
+}
+
+/**
+ * Set arrow down
+ */
+function setArrowDown(msArrow) {
+    removeClass(msArrow, 'msArrowUp');
+    addClass(msArrow, 'msArrowDown');
 }
 
 /**
@@ -165,18 +216,18 @@ function outBoundEvent(event) {
  */
 function selectOption(print) {
     var optionsContainer = this.parentElement;
-    var msContainer = 
-        optionsContainer.parentElement.querySelector('div.msContainer');
-    setSelected(msContainer, optionsContainer, print);
+    var msText = 
+        optionsContainer.parentElement.querySelector('div.msContainer div.msText');
+    setSelected(msText, optionsContainer, print);
 }
 
 /**
  * Set the selected options into the container
  */
-function setSelected(msContainer, optionsContainer, print) {
+function setSelected(msText, optionsContainer, print) {
     var opts = optionsContainer.querySelectorAll('input[type=checkbox]');
     var arr = new Array();
-    msContainer.innerText = '';
+    msText.innerText = '';
     for(var i = 0; i < opts.length; ++i) {
         if(opts[i].checked) {
             if(print == 'value')
@@ -188,9 +239,9 @@ function setSelected(msContainer, optionsContainer, print) {
         }
     }
     if(arr.length > 0)
-        msContainer.innerText = arr.join(', ');
+        msText.innerText = arr.join(', ');
     else
-        msContainer.innerText = 'Selezionare un\'opzione';
+        msText.innerText = 'Selezionare un\'opzione';
 }
 
 /**
@@ -243,7 +294,16 @@ function extend(def, par) {
 }
 
 /**
- * Remove the css class
+ * Add css class
+ */
+function addClass(el, cls) {
+    if(hasClass(el, cls))
+        return;
+    el.className += ' ' + cls;
+}
+
+/**
+ * Remove css class
  */
 function removeClass(el, cls) {
     el.className = el.className.replace(
