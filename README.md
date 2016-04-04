@@ -9,6 +9,7 @@ Transforms HTML multiple select elements into multiselect with checkboxes.
 	<script src="multiSelect.js"></script>
 	<link rel="STYLESHEET" type="text/css" href="mSelectStyle.css">
 ```
+* Edit the *msArrow* CSS class by setting the right image path.
 * Use the provided function in your code. You can modify the output passing a parameters object.
 ```
 	multiSelectTrasnform(parameters);
