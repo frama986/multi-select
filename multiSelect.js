@@ -1,4 +1,13 @@
 /**
+ * Localization of messages
+ */
+var messageResources = {'all':'Seleziona tutto', 'select':'Selezionare un\'opzione'};
+function $__(key) {
+    var ret = messageResources[key] || key;
+    return ret;
+}
+
+/**
  * Main function
  **/
 function multiSelectTrasnform(_params) {
@@ -6,12 +15,14 @@ function multiSelectTrasnform(_params) {
     var returns = new Array();
     
     var defaultParams = {
-        'selector' : 'select[multiple].multiSelect',
-        'container' : document,
-        'print' : 'value', // value, text, mix
-        'hRatio' : 1,
-        'height' : null,
-        'width' : null
+        'selector'   : 'select[multiple].multiSelect',
+        'container'  : document,
+        'print'      : 'value', // value, text, mix
+        'all'        : true,
+        'hRatio'     : 1,
+        'height'     : null,
+        'width'      : null,
+        'optsWidth'  : null
     };
     
     var params = extend(defaultParams, _params);
@@ -52,28 +63,54 @@ function multiSelectTrasnform(_params) {
         msContainer.className = 'msContainer';
         msContainer.style.width = msWidth + 'px';
         msContainer.style.height = (msHeight * params.hRatio)+ 'px';
-        //cloneFont(el, msContainer);
-        //msContainer.innerText = 'Selezionare un\'opzione';
+        msContainer.tabIndex = el.tabIndex || 0;
         
         // Text of selected elements
         var msText = document.createElement('div');
         msText.className = 'msText';
         cloneFont(el, msText);
-        msText.innerText = 'Selezionare un\'opzione';
+        msText.innerText = $__('select');
+        
+        if(params.hRatio > 1) {
+           msText.style.whiteSpace = 'normal';
+        }
         
         // Arrow image
         var msArrow = document.createElement('div');
         msArrow.className = 'msArrow msArrowDown';
         
-        msContainer.appendChild(msText);
         msContainer.appendChild(msArrow);
+        msContainer.appendChild(msText);
         mainContainer.appendChild(msContainer);
         
         // Options container
         var optionsContainer = document.createElement('div');
         optionsContainer.className = 'msOptionsContainer hidden';
-        optionsContainer.style.width = msWidth + 'px';
+        if(params.optsWidth != null) {
+            if(params.optsWidth == 'auto')
+                optionsContainer.style.minWidth = msWidth + 'px';
+            else if(!isNaN(params.optsWidth))
+                optionsContainer.style.width = params.optsWidth + 'px';
+        }
+        else
+            optionsContainer.style.width = msWidth + 'px';
         cloneFont(el, optionsContainer);
+        
+        // All Button
+        if(params.all) {
+            var btnContainer = document.createElement('div');
+            btnContainer.className = 'msOption';
+            var allBtn = document.createElement('button');
+            allBtn.innerText = $__('all');
+            allBtn.className = 'allButton';
+            
+            btnContainer.appendChild(allBtn);
+            optionsContainer.appendChild(btnContainer);
+            
+            bindFunction(allBtn, 'click', selectAll(mainContainer, params.print));
+        }
+        
+        // Options element
         for(var j = 0; j < options.length; ++j) {
             // Option element
             var optContainer = document.createElement('div');
@@ -91,13 +128,16 @@ function multiSelectTrasnform(_params) {
             
             var label = document.createElement('label');
             label.className = 'msLabel';
+            if(options[j].title != null)
+                label.title = options[j].title;
+            
             label.appendChild(option);
             label.appendChild(document.createTextNode(options[j].text))
             optContainer.appendChild(label);
             
             optionsContainer.appendChild(optContainer);
             
-            bindFunction(optContainer, 'click', function(event) {
+            bindFunction(optContainer, 'click', function(e) {
                 selectOption.call(this, params.print);
             });
         }
@@ -105,6 +145,13 @@ function multiSelectTrasnform(_params) {
         mainContainer.appendChild(optionsContainer);
         
         bindFunction(msContainer, 'click', msToggle);
+        
+        bindFunction(msContainer, 'keydown', function(e){
+            var code = e.keyCode;
+            var el = this;
+            if(code == 32 || code == 13)
+                msToggle.call(el, e);
+        });
         
         setSelected(msText, optionsContainer, params.print);
         
@@ -164,7 +211,7 @@ function openOptionsContainer(msContainer, optionsContainer) {
             (msContainer.offsetTop - optionsContainer.offsetHeight) + 'px';
         optionsContainer.style.left = msContainer.offsetLeft + 'px';
     }
-
+    optionsContainer.scrollTop = 0;
     setArrowUp(msArrow);
 }
 
@@ -227,6 +274,7 @@ function selectOption(print) {
 function setSelected(msText, optionsContainer, print) {
     var opts = optionsContainer.querySelectorAll('input[type=checkbox]');
     var arr = new Array();
+    var title = new Array();
     msText.innerText = '';
     for(var i = 0; i < opts.length; ++i) {
         if(opts[i].checked) {
@@ -236,12 +284,47 @@ function setSelected(msText, optionsContainer, print) {
                 arr.push(opts[i].parentElement.innerText);
             else if(print == 'mix')
                 arr.push(opts[i].value + ' - ' + opts[i].parentElement.innerText);
+            title.push(opts[i].parentElement.innerText);
         }
     }
-    if(arr.length > 0)
+    if(arr.length > 0) {
         msText.innerText = arr.join(', ');
+        msText.title = title.join(', ');
+    }
     else
-        msText.innerText = 'Selezionare un\'opzione';
+        msText.innerText = $__('select');
+}
+
+/**
+ *
+ */
+function selectAll(mainContainer, print) {
+    
+    return function() {
+        
+        var optionsContainer = mainContainer.querySelector('div.msOptionsContainer');
+        var options = mainContainer.querySelectorAll('.msOption input[type=checkbox]');
+        var msText = mainContainer.querySelector('div.msText');
+        var i;
+        
+        if(options.length == 0)
+            return;
+        
+        // All checked?
+        for(i = 0; i < options.length; ++i) {
+            if(!options[i].checked)
+                break;
+        }
+        if(options.length == i){ // unselect all
+            for(i = 0; i < options.length; ++i)
+                options[i].checked = false;
+        }
+        else { // select All
+            for(i = 0; i < options.length; ++i)
+                options[i].checked = true;
+        }
+        setSelected(msText, optionsContainer, print);
+    };
 }
 
 /**
