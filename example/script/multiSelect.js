@@ -1,7 +1,7 @@
 /**
  * Localization of messages
  */
-var messageResources = {'all':'Seleziona tutto', 'select':'Selezionare un\'opzione'};
+var messageResources = {'all':'Seleziona tutto', 'select':'Selezionare le opzioni', 'select.title':'Selezionare una o più opzioni dall\'elenco a discesa'};
 function $__(key) {
     var ret = messageResources[key] || key;
     return ret;
@@ -18,7 +18,7 @@ function multiSelectTrasnform(_params) {
         'selector'   : 'select[multiple].multiSelect',
         'container'  : document,
         'print'      : 'value', // value, text, mix
-        'all'        : true,
+        'allButton'  : true,
         'hRatio'     : 1,
         'height'     : null,
         'width'      : null,
@@ -97,7 +97,7 @@ function multiSelectTrasnform(_params) {
         cloneFont(el, optionsContainer);
         
         // All Button
-        if(params.all) {
+        if(params.allButton) {
             var btnContainer = document.createElement('div');
             btnContainer.className = 'msOption';
             var allBtn = document.createElement('button');
@@ -107,7 +107,7 @@ function multiSelectTrasnform(_params) {
             btnContainer.appendChild(allBtn);
             optionsContainer.appendChild(btnContainer);
             
-            bindFunction(allBtn, 'click', selectAll(mainContainer, params.print));
+            bindFunction(allBtn, 'click', selectAll(mainContainer, params));
         }
         
         // Options element
@@ -138,7 +138,7 @@ function multiSelectTrasnform(_params) {
             optionsContainer.appendChild(optContainer);
             
             bindFunction(optContainer, 'click', function(e) {
-                selectOption.call(this, params.print);
+                selectOption.call(this, params);
             });
         }
         
@@ -153,7 +153,7 @@ function multiSelectTrasnform(_params) {
                 msToggle.call(el, e);
         });
         
-        setSelected(msText, optionsContainer, params.print);
+        setSelected(msText, optionsContainer, params);
         
         returns.push(mainContainer);
     }
@@ -261,20 +261,21 @@ function outBoundEvent(event) {
 /**
  * Option selection handler
  */
-function selectOption(print) {
+function selectOption(params) {
     var optionsContainer = this.parentElement;
     var msText = 
         optionsContainer.parentElement.querySelector('div.msContainer div.msText');
-    setSelected(msText, optionsContainer, print);
+    setSelected(msText, optionsContainer, params);
 }
 
 /**
  * Set the selected options into the container
  */
-function setSelected(msText, optionsContainer, print) {
+function setSelected(msText, optionsContainer, params) {
     var opts = optionsContainer.querySelectorAll('input[type=checkbox]');
     var arr = new Array();
     var title = new Array();
+    var print = params.print;
     msText.innerText = '';
     for(var i = 0; i < opts.length; ++i) {
         if(opts[i].checked) {
@@ -287,18 +288,24 @@ function setSelected(msText, optionsContainer, print) {
             title.push(opts[i].parentElement.innerText);
         }
     }
+    
     if(arr.length > 0) {
-        msText.innerText = arr.join(', ');
+        msText.innerText = 
+            trimToPixel(
+                arr.join(', ')
+                , (msText.clientWidth * params.hRatio), msText.style.font);
         msText.title = title.join(', ');
     }
-    else
+    else {
         msText.innerText = $__('select');
+        msText.title = $__('select.title');
+    }
 }
 
 /**
  *
  */
-function selectAll(mainContainer, print) {
+function selectAll(mainContainer, params) {
     
     return function() {
         
@@ -323,7 +330,7 @@ function selectAll(mainContainer, print) {
             for(i = 0; i < options.length; ++i)
                 options[i].checked = true;
         }
-        setSelected(msText, optionsContainer, print);
+        setSelected(msText, optionsContainer, params);
     };
 }
 
@@ -356,10 +363,53 @@ function bindFunction(el, event, handler) {
 function cloneFont(src, dst) {
     var computedStyle =
     (window.getComputedStyle)? window.getComputedStyle(src) : src.currentStyle;
-    dst.style.fontStyle = computedStyle.fontStyle;
-    dst.style.fontSize = computedStyle.fontSize;
-    dst.style.fontFamily = computedStyle.fontFamily;
-    dst.style.fontWeight = computedStyle.fontWeight;
+    
+    var fnt = computedStyle.fontStyle + " " 
+            + computedStyle.fontVariant + " "
+            + computedStyle.fontWeight + " "
+            + computedStyle.fontSize + " "
+            + computedStyle.fontFamily;
+    
+    if(dst != null)
+        dst.style.font = fnt;
+    
+    return fnt;
+}
+
+/**
+ * Calculate the visual length in pixel of a string
+ */
+function textLenght(msg, fnt) {
+    var tmp = document.createElement('span');
+    tmp.style.position = 'absolute';
+    tmp.style.visibility = 'hidden';
+    tmp.style.whiteSpace = 'nowrap';
+    if(fnt != null)
+        tmp.style.font = fnt;
+    tmp.innerText = msg;
+    document.body.appendChild(tmp);
+    var size = tmp.clientWidth;
+    document.body.removeChild(tmp);
+    return size;
+}
+
+/**
+ * Trucate the string at a desired length expressed in pixel.
+ */
+function trimToPixel(str, len, fnt) {
+    var tmp = str;
+    var trimmed = str;
+    len -= 3;
+    
+    if(textLenght(tmp, fnt) > len) {
+        trimmed +=  '...';
+        while(textLenght(trimmed, fnt) > len) {
+            tmp = tmp.substring(0, tmp.length-1);
+            trimmed = tmp + '...';
+        }
+    }
+    
+    return trimmed;
 }
 
 /**
