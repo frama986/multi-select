@@ -37,12 +37,10 @@
     width: auto;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .msArrow {
     position: absolute;
-    /*left: 1px;*/
     right: 1px;
     top: 0px;
     bottom: 0px;
